@@ -600,7 +600,7 @@ const CompletionStatusPage = ({
                                 {status.actionId?.fixed_id || 'N/A'}
                               </TableCell>
                               <TableCell>
-                                {status.controlId?.section_desc || 'N/A'}
+                                {status.controlId?.section_main_desc || 'N/A'}
                               </TableCell>
 
                               {role !== 'IT Team' && (
@@ -612,19 +612,21 @@ const CompletionStatusPage = ({
                               <TableCell>
                                 {status.controlId.control_type}
                               </TableCell>
-
                               <TableCell>
                                 {status?.selectedSoftware?.software_name ||
                                   'N/A'}
                               </TableCell>
-                              <ActionCell
+                              <TableCell>
+                                {status?.actionId.action_des || 'N/A'}
+                              </TableCell>
+                              {/* <ActionCell
                                 actionId={status.actionId?._id}
                                 controlId={status.controlId?._id}
                                 productFamilyId={
                                   status.controlId.product_family_Id
                                 } // Assuming this exists
                                 softwareId={status.selectedSoftware?._id} // Assuming this exists
-                              />
+                              /> */}
                               {/* Evidence upload button for IT Team */}
                               {role === 'IT Team' && !isCompleted && (
                                 <EvidenceUpload
@@ -872,7 +874,7 @@ const CompletionStatusPage = ({
                           ) : (
                             // Render only the control description if isTask is false
                             <TableCell colSpan={13}>
-                              {status.controlId?.section_desc ||
+                              {status.controlId?.section_main_desc ||
                                 'Control description not available'}
                             </TableCell>
                           )}

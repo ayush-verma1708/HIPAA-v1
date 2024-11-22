@@ -502,7 +502,7 @@ const ListOfActions = () => {
                 } ${expandedFamilyId === family._id ? 'selected-family' : ''}`}
                 onClick={() => handleFamilyClick(family._id)}
               >
-                Chapter {family.variable_id}
+                Subpart {family.hipaa_Classification}
               </div>
             </Tooltip>
           </div>

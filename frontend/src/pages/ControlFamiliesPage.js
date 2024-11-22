@@ -168,6 +168,8 @@ const ControlFamiliesPage = () => {
             <TableRow>
               <TableCell>Fixed ID</TableCell>
               <TableCell>Variable ID</TableCell>
+              <TableCell>hipaa_Classification</TableCell>
+              <TableCell>HIPAA Desc</TableCell>
               <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
@@ -178,6 +180,8 @@ const ControlFamiliesPage = () => {
                 <TableRow key={cf._id}>
                   <TableCell>{cf.fixed_id}</TableCell>
                   <TableCell>{cf.variable_id}</TableCell>
+                  <TableCell>{cf.hipaa_Classification}</TableCell>
+                  <TableCell>{cf.family_desc}</TableCell>
                   {/* <TableCell>
                     {!cf.isDPDPA && (
                       <>

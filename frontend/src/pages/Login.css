@@ -1,0 +1,95 @@
+/* General styles for the page */
+body,
+html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+.bg__login-page {
+  position: relative;
+  background-image: url('../../public/assets/hipaaBG.png') !important;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  height: 100vh;
+}
+
+.bg__login-page::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(76, 81, 114, 0.5); /* Dark overlay for contrast */
+  z-index: 1;
+}
+
+.bg__login-page > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Centering the login container */
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  padding: 0 20px; /* Padding for mobile */
+}
+
+/* Form design */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 400px;
+  padding: 20px;
+  border-radius: 8px;
+  background-color: white;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.input-group {
+  margin-bottom: 15px;
+}
+
+input {
+  padding: 10px;
+  font-size: 16px;
+  width: 100%;
+  margin-top: 5px;
+}
+
+button {
+  padding: 10px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+/* Error styling */
+.error {
+  color: red;
+  margin-bottom: 10px;
+}
+
+/* Media query for mobile */
+@media (max-width: 768px) {
+  .login-container {
+    padding: 20px;
+  }
+
+  .login-form {
+    width: 100%;
+    max-width: 100%;
+    padding: 15px;
+  }
+
+  input,
+  button {
+    font-size: 14px;
+    padding: 8px;
+  }
+}

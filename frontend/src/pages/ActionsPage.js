@@ -178,7 +178,7 @@ const ActionsPage = () => {
               <TableCell>Fixed ID</TableCell>
               <TableCell>Variable ID</TableCell>
               <TableCell>Control Section</TableCell>
-              <TableCell>Is DPDPA</TableCell>
+              <TableCell>Task</TableCell>
               <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
@@ -193,7 +193,8 @@ const ActionsPage = () => {
                   <TableCell>
                     {action.control_Id ? action.control_Id.section : 'N/A'}
                   </TableCell>
-                  <TableCell>{action.isDPDPA ? 'Yes' : 'No'}</TableCell>
+                  {/* <TableCell>{action.isDPDPA ? 'Yes' : 'No'}</TableCell> */}
+                  <TableCell>{action.action_des}</TableCell>
                   {/* <TableCell>
                     {!action.isDPDPA && (
                       <>

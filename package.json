@@ -6,13 +6,13 @@
   "scripts": {
     "front": "cd .\\frontend\\ && pnpm start",
     "back": "cd .\\backend\\ && pnpm run dev"
- 
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@mui/icons-material": "^6.1.8",
     "bcryptjs": "^2.4.3",
     "bootstrap": "^5.3.3",
     "chart.js": "^4.4.4",

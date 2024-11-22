@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, error } from 'react';
 import {
   PublicClientApplication,
   InteractionRequiredAuthError,
@@ -60,6 +60,41 @@ import {
 } from '@mui/icons-material';
 import DeviceList from '../components/DeviceList.js';
 import DeviceStats from '../components/DeviceStats';
+import { fetchNetworkScan, analyzePackets } from '../api/ipService'; // API for packet analysis
+
+// Function to detect if the device is a TV
+const isTV = (device) => {
+  return device.Hostnames.some((hostname) =>
+    hostname.toLowerCase().includes('tv')
+  );
+};
+
+// Function to detect if the device is a Router
+const isRouter = (device) => {
+  return (
+    device.OS.toLowerCase().includes('router') ||
+    device.Hostnames.some((hostname) =>
+      hostname.toLowerCase().includes('router')
+    )
+  );
+};
+
+// Function to detect if the device is a Mobile
+const isMobile = (device) => {
+  return (
+    device.OS.toLowerCase().includes('android') ||
+    device.OS.toLowerCase().includes('ios')
+  );
+};
+
+// Function to detect if the device is a Laptop
+const isLaptop = (device) => {
+  return (
+    device.OS.toLowerCase().includes('windows') ||
+    device.OS.toLowerCase().includes('mac') ||
+    device.OS.toLowerCase().includes('linux')
+  );
+};
 
 const AzureLogin = () => {
   const [account, setAccount] = useState(null); // To store user account info
@@ -84,8 +119,88 @@ const AzureLogin = () => {
     lastScan: null,
   });
 
+  const [devices, setDevices] = useState([]); // State to hold the devices
+  const [loading, setLoading] = useState(false); // Loading state
+  const [error, setError] = useState(null); // Error state
+  const [deviceStats, setDeviceStats] = useState({
+    tv: 0,
+    router: 0,
+    mobile: 0,
+    laptop: 0,
+    other: 0,
+  }); // State to hold the device statistics
+  const [selectedDevices, setSelectedDevices] = useState([]); // State to track selected devices
+
+  const [isAzureLoggedIn, setIsAzureLoggedIn] = useState(false);
+  const [azureUserData, setAzureUserData] = useState(null);
+
+  const handleRefresh = async () => {
+    setLoading(true); // Set loading to true when refresh starts
+    await fetchDevices(); // Call the fetchDevices function
+    setLoading(false); // Set loading to false when data is fetched
+    setLastRefresh(new Date().toLocaleString()); // Update last refresh timestamp
+  };
+
+  // Function to fetch devices
+  const fetchDevices = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await fetchNetworkScan();
+      setDevices(data.devices || []);
+      updateDeviceStats(data.devices || []);
+    } catch (err) {
+      setError('Error fetching devices');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Function to update device stats
+  const updateDeviceStats = (devices) => {
+    const stats = devices.reduce(
+      (acc, device) => {
+        if (isTV(device)) acc.tv++;
+        else if (isRouter(device)) acc.router++;
+        else if (isMobile(device)) acc.mobile++;
+        else if (isLaptop(device)) acc.laptop++;
+        else acc.other++;
+        return acc;
+      },
+      { tv: 0, router: 0, mobile: 0, laptop: 0, other: 0 }
+    );
+    setDeviceStats(stats);
+  };
+
+  // Handle device selection
+  const handleDeviceSelection = (deviceIP) => {
+    setSelectedDevices((prev) =>
+      prev.includes(deviceIP)
+        ? prev.filter((ip) => ip !== deviceIP)
+        : [...prev, deviceIP]
+    );
+  };
+
+  // Analyze packets of selected devices
+  const analyzeSelectedDevices = async () => {
+    if (selectedDevices.length === 0) {
+      alert('Please select at least one device for analysis.');
+      return;
+    }
+
+    try {
+      const analysisResults = await analyzePackets(selectedDevices);
+      console.log('Packet Analysis Results:', analysisResults);
+      // You can display these results in a new section or modal.
+    } catch (err) {
+      console.error('Error analyzing packets:', err);
+      alert('Error analyzing packets');
+    }
+  };
+
   // Decode JWT to extract user details
-  const decodeJwt = (token) => {
+  function decodeJwt(token) {
     const base64Url = token.split('.')[1];
     const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
     const jsonPayload = decodeURIComponent(
@@ -95,7 +210,7 @@ const AzureLogin = () => {
         .join('')
     );
     return JSON.parse(jsonPayload);
-  };
+  }
 
   // Add new function to fetch all data
   const fetchAllData = async () => {
@@ -548,6 +663,7 @@ const AzureLogin = () => {
   // Add section components
   const NetworkScanner = () => (
     <Box>
+      {/* Network Scanner Header and Controls */}
       <Paper sx={{ p: 2, mb: 3 }}>
         <Stack
           direction='row'
@@ -556,7 +672,7 @@ const AzureLogin = () => {
         >
           <Typography variant='h6'>Network Scanner</Typography>
           <Stack direction='row' spacing={2} alignItems='center'>
-            <DeviceStats stats={scannerStats} />
+            {/* <DeviceStats stats={scannerStats} /> */}
             <FormControlLabel
               control={
                 <Switch
@@ -567,9 +683,7 @@ const AzureLogin = () => {
               label='Auto Refresh'
             />
             <Tooltip title={`Last refreshed: ${lastRefresh || 'Never'}`}>
-              <IconButton
-                onClick={() => setLastRefresh(new Date().toLocaleString())}
-              >
+              <IconButton onClick={handleRefresh}>
                 <Refresh />
               </IconButton>
             </Tooltip>
@@ -577,10 +691,33 @@ const AzureLogin = () => {
         </Stack>
       </Paper>
 
+      {/* Network Device List & Stats Section */}
       <Grid container spacing={3}>
         <Grid item xs={12} lg={8}>
-          <DeviceList onStatsUpdate={handleStatsUpdate} />
+          {devices.length > 0 && (
+            <Stack spacing={2}>
+              {devices.map((device, index) => (
+                <Box
+                  key={index}
+                  sx={{ border: '1px solid #ddd', p: 2, borderRadius: 2 }}
+                >
+                  <Typography variant='subtitle1'>
+                    IP Address: {device.IP}
+                  </Typography>
+                  <Typography variant='body2'>OS: {device.OS}</Typography>
+                  <Typography variant='body2'>
+                    Open Ports:{' '}
+                    {device['Open Ports'].length > 0
+                      ? device['Open Ports'].join(', ')
+                      : 'None'}
+                  </Typography>
+                </Box>
+              ))}
+            </Stack>
+          )}
         </Grid>
+
+        {/* Data Inventory and Access Logs */}
         <Grid item xs={12} lg={4}>
           <Stack spacing={2}>
             {dataInventory && (

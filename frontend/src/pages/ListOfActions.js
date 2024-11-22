@@ -462,18 +462,18 @@ const ListOfActions = () => {
 
           <div className='download-container'>
             <a
-              href='https://www.meity.gov.in/writereaddata/files/Digital%20Personal%20Data%20Protection%20Act%202023.pdf'
+              href='https://www.hhs.gov/sites/default/files/hipaa-simplification-201303.pdf'
               target='_blank'
               rel='noopener noreferrer' // Security feature
               className='download-link'
             >
               <i className='fas fa-download'></i> {/* Add download icon */}
-              Digital Personal Data Protection Act 2023
+              HIPAA Administrative Simplification Regulation
             </a>
           </div>
         </>
 
-        <div>
+        {/* <div>
           <div
             className='hover:bg-[white] bg-[#ffffff]'
             style={{ marginBottom: '10px' }}
@@ -486,7 +486,7 @@ const ListOfActions = () => {
               Chapter 1
             </button>
           </div>
-        </div>
+        </div> */}
 
         {sortedFamilies.map((family) => (
           <div
@@ -507,7 +507,7 @@ const ListOfActions = () => {
             </Tooltip>
           </div>
         ))}
-        <div>
+        {/* <div>
           <div
             className='hover:bg-[white] bg-[#ffffff]'
             style={{ marginBottom: '10px' }}
@@ -548,7 +548,7 @@ const ListOfActions = () => {
               Penalties
             </button>
           </div>
-        </div>
+        </div> */}
       </div>
       {/* Conditional rendering based on selectedChapter */}
       {selectedChapter === 1 && (

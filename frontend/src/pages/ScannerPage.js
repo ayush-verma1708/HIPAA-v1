@@ -853,9 +853,9 @@ const AzureLogin = () => {
         <Container maxWidth={false} sx={{ py: 4 }}>
           {!account ? (
             <Paper sx={{ p: 4, textAlign: 'center' }}>
-              <Typography variant='h5' gutterBottom>
-                Welcome to DPDPA Scanner
-              </Typography>
+              {/* <Typography variant='h5' gutterBottom>
+                Welcome to Scanner
+              </Typography> */}
               <Typography color='textSecondary' paragraph>
                 Please login to access the scanner dashboard
               </Typography>

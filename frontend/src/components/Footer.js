@@ -18,7 +18,7 @@ const Footer = () => {
       <div className='absolute bottom-0 right-0 mb-4 mr-6 text-sm font-light text-gray-300'>
         <p>&copy; 2024 Company Directory. All rights reserved.</p>
         <p className='text-xs text-gray-400 mt-2'>
-          Version 1.0 - DPDPA Assessment
+          Version 1.0 - HIPAA Assessment
         </p>
       </div>
     </footer>

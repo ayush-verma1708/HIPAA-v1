@@ -41,7 +41,6 @@ const ScoreboardLineage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState([]);
   const [selectedNode, setSelectedNode] = useState(null);
-  const [theme, setTheme] = useState('light');
 
   useEffect(() => {
     const fetchStatuses = async () => {
@@ -71,16 +70,26 @@ const ScoreboardLineage = () => {
           return acc;
         }, {});
 
+        // Sort statuses based on the number of actions
+        const sortedStatuses = Object.keys(groupedData).sort(
+          (a, b) => groupedData[a].length - groupedData[b].length
+        );
+
         const newNodes = [];
         const newEdges = [];
+        const nodeSpacing = 150; // Spacing between action nodes
+        const gridSpacing = 600; // Spacing between main nodes
 
         // Create main nodes and connect individual action nodes to them
-        Object.keys(groupedData).forEach((status, index) => {
+        sortedStatuses.forEach((status, index) => {
           const statusColor = getStatusColor(status);
           const actions = groupedData[status];
           const isHighRisk = status === 'Open';
 
           const mainNodeId = `group-${status}`;
+          const mainNodeX = (index % 5) * gridSpacing;
+          const mainNodeY = Math.floor(index / 5) * gridSpacing;
+
           newNodes.push({
             id: mainNodeId,
             data: {
@@ -104,7 +113,7 @@ const ScoreboardLineage = () => {
               status,
               actions,
             },
-            position: { x: (index % 5) * 300, y: Math.floor(index / 5) * 200 },
+            position: { x: mainNodeX, y: mainNodeY },
             style: {
               border: `3px solid ${statusColor}`,
               background: isHighRisk ? '#ffe5e5' : '#fff',
@@ -116,6 +125,11 @@ const ScoreboardLineage = () => {
           });
 
           actions.forEach((action, actionIndex) => {
+            const row = Math.floor(actionIndex / 5);
+            const col = actionIndex % 5;
+            const actionNodeX = mainNodeX + (col + 1) * nodeSpacing;
+            const actionNodeY = mainNodeY + (row + 1) * nodeSpacing;
+
             const actionNodeId = `action-${action._id}`;
             newNodes.push({
               id: actionNodeId,
@@ -142,10 +156,7 @@ const ScoreboardLineage = () => {
                 ),
                 action,
               },
-              position: {
-                x: (index % 5) * 300 + 150,
-                y: Math.floor(index / 5) * 200 + (actionIndex + 1) * 100,
-              },
+              position: { x: actionNodeX, y: actionNodeY },
               style: {
                 border: `2px solid ${statusColor}`,
                 background: '#fff',
@@ -229,10 +240,6 @@ const ScoreboardLineage = () => {
     setSearchQuery(e.target.value);
   }, 300);
 
-  const handleThemeChange = () => {
-    setTheme((prevTheme) => (prevTheme === 'light' ? 'dark' : 'light'));
-  };
-
   if (loading) return <CircularProgress />;
   if (error) return <Typography>Error: {error}</Typography>;
 
@@ -280,12 +287,6 @@ const ScoreboardLineage = () => {
           sx={{ background: '#e0e0e0' }}
         />
         <Button onClick={handleExport}>Export as PDF</Button>
-        <FormControlLabel
-          control={
-            <Switch checked={theme === 'dark'} onChange={handleThemeChange} />
-          }
-          label='Dark Mode'
-        />
       </Box>
 
       {/* Graph Section */}
@@ -303,7 +304,7 @@ const ScoreboardLineage = () => {
         >
           <MiniMap />
           <Controls />
-          <Background variant={theme} />
+          <Background />
         </ReactFlow>
       </Box>
 

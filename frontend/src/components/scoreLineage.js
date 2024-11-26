@@ -26,6 +26,8 @@ import {
   Switch,
   FormControlLabel,
   LinearProgress,
+  Grid,
+  Paper,
 } from '@mui/material';
 import { debounce } from 'lodash';
 import html2canvas from 'html2canvas';
@@ -69,14 +71,18 @@ const ScoreboardLineage = () => {
           return acc;
         }, {});
 
-        // Map nodes with dynamic size and risk-based color
-        const nodes = Object.keys(groupedData).map((status, index) => {
+        const newNodes = [];
+        const newEdges = [];
+
+        // Create main nodes and connect individual action nodes to them
+        Object.keys(groupedData).forEach((status, index) => {
           const statusColor = getStatusColor(status);
           const actions = groupedData[status];
           const isHighRisk = status === 'Open';
 
-          return {
-            id: `group-${status}`,
+          const mainNodeId = `group-${status}`;
+          newNodes.push({
+            id: mainNodeId,
             data: {
               label: (
                 <Tooltip title={`Status: ${status}`} arrow>
@@ -98,7 +104,7 @@ const ScoreboardLineage = () => {
               status,
               actions,
             },
-            position: { x: (index % 5) * 300, y: Math.floor(index / 5) * 120 },
+            position: { x: (index % 5) * 300, y: Math.floor(index / 5) * 200 },
             style: {
               border: `3px solid ${statusColor}`,
               background: isHighRisk ? '#ffe5e5' : '#fff',
@@ -107,22 +113,61 @@ const ScoreboardLineage = () => {
               fontSize: isHighRisk ? '1rem' : '0.9rem',
               boxShadow: isHighRisk ? '0px 0px 15px rgba(255, 0, 0, 0.6)' : '',
             },
-          };
+          });
+
+          actions.forEach((action, actionIndex) => {
+            const actionNodeId = `action-${action._id}`;
+            newNodes.push({
+              id: actionNodeId,
+              data: {
+                label: (
+                  <Paper sx={{ padding: 1 }}>
+                    <Typography variant='body2'>
+                      <strong>Asset:</strong>{' '}
+                      {action.assetId?.name || 'Unknown Asset'}
+                    </Typography>
+                    <Typography variant='body2'>
+                      <strong>Family:</strong>{' '}
+                      {action.familyId?.hipaa_Classification ||
+                        'Unknown Family'}
+                    </Typography>
+                    <Typography variant='body2'>
+                      <strong>Status:</strong> {action.status}
+                    </Typography>
+                    <Typography variant='body2'>
+                      <strong>Selected Software:</strong>{' '}
+                      {action.software || 'N/A'}
+                    </Typography>
+                  </Paper>
+                ),
+                action,
+              },
+              position: {
+                x: (index % 5) * 300 + 150,
+                y: Math.floor(index / 5) * 200 + (actionIndex + 1) * 100,
+              },
+              style: {
+                border: `2px solid ${statusColor}`,
+                background: '#fff',
+                borderRadius: '8px',
+                padding: '10px',
+                fontSize: '0.9rem',
+              },
+            });
+
+            newEdges.push({
+              id: `edge-${mainNodeId}-${actionNodeId}`,
+              source: mainNodeId,
+              target: actionNodeId,
+              type: 'smoothstep',
+              animated: true,
+              style: { stroke: statusColor },
+            });
+          });
         });
 
-        // Map edges
-        const edges = filteredData.map((item) => ({
-          id: `edge-${item._id}`,
-          source: item.assetId?._id || `asset-${item._id}`,
-          target: item.familyId?._id || `family-${item._id}`,
-          label: item.status || 'Status',
-          type: 'smoothstep',
-          animated: true,
-          style: { stroke: getStatusColor(item.status) },
-        }));
-
-        setNodes(nodes);
-        setEdges(edges);
+        setNodes(newNodes);
+        setEdges(newEdges);
         setLoading(false);
       } catch (err) {
         setError('Failed to fetch lineage data.');
@@ -158,7 +203,7 @@ const ScoreboardLineage = () => {
   const filteredNodes = nodes.filter(
     (node) =>
       (!searchQuery ||
-        node.data.status.toLowerCase().includes(searchQuery.toLowerCase())) &&
+        node.data.status?.toLowerCase().includes(searchQuery.toLowerCase())) &&
       (!statusFilter.length || statusFilter.includes(node.data.status))
   );
 
@@ -271,51 +316,69 @@ const ScoreboardLineage = () => {
       >
         <DialogTitle>{selectedNode?.data?.status} Actions</DialogTitle>
         <DialogContent>
-          {selectedNode?.data?.actions.map((action) => (
-            <Box key={action._id} sx={{ marginBottom: 2 }}>
-              <Typography variant='body1'>
-                <strong>Asset:</strong>{' '}
-                {action.assetId?.name || 'Unknown Asset'}
-              </Typography>
-              <Typography variant='body2'>
-                <strong>Family:</strong>{' '}
-                {action.familyId?.hipaa_Classification || 'Unknown Family'}
-              </Typography>
-              <Typography variant='body2'>
-                <strong>Status:</strong> {action.status}
-              </Typography>
-              <Typography variant='body2'>
-                <strong>Selected Software:</strong> {action.software || 'N/A'}
-              </Typography>
-              <Typography variant='body2'>
-                <strong>Historical Changes:</strong>
-              </Typography>
-              {Array.isArray(action.history) ? (
-                action.history.map((change) => (
-                  <Box key={change._id} sx={{ marginLeft: 2, marginBottom: 1 }}>
+          {selectedNode?.data?.actions?.map((action) => (
+            <Paper key={action._id} sx={{ padding: 2, marginBottom: 2 }}>
+              <Grid container spacing={2}>
+                <Grid item xs={12}>
+                  <Typography variant='body1'>
+                    <strong>Asset:</strong>{' '}
+                    {action.assetId?.name || 'Unknown Asset'}
+                  </Typography>
+                </Grid>
+                <Grid item xs={12}>
+                  <Typography variant='body2'>
+                    <strong>Family:</strong>{' '}
+                    {action.familyId?.hipaa_Classification || 'Unknown Family'}
+                  </Typography>
+                </Grid>
+                <Grid item xs={12}>
+                  <Typography variant='body2'>
+                    <strong>Status:</strong> {action.status}
+                  </Typography>
+                </Grid>
+                <Grid item xs={12}>
+                  <Typography variant='body2'>
+                    <strong>Selected Software:</strong>{' '}
+                    {action.software || 'N/A'}
+                  </Typography>
+                </Grid>
+                <Grid item xs={12}>
+                  <Typography variant='body2'>
+                    <strong>Historical Changes:</strong>
+                  </Typography>
+                  {Array.isArray(action.history) ? (
+                    action.history.map((change) => (
+                      <Paper key={change._id} sx={{ padding: 1, marginTop: 1 }}>
+                        <Typography variant='body2'>
+                          <strong>Modified At:</strong>{' '}
+                          {new Date(change.modifiedAt).toLocaleString()}
+                        </Typography>
+                        <Typography variant='body2'>
+                          <strong>Modified By:</strong>{' '}
+                          {change.modifiedBy.username}
+                        </Typography>
+                        <Typography variant='body2'>
+                          <strong>Changes:</strong>
+                          <Box sx={{ marginLeft: 2 }}>
+                            {Object.entries(change.changes).map(
+                              ([key, value]) => (
+                                <Typography key={key} variant='body2'>
+                                  {key}: {value.toString()}
+                                </Typography>
+                              )
+                            )}
+                          </Box>
+                        </Typography>
+                      </Paper>
+                    ))
+                  ) : (
                     <Typography variant='body2'>
-                      <strong>Modified At:</strong>{' '}
-                      {new Date(change.modifiedAt).toLocaleString()}
+                      No historical changes
                     </Typography>
-                    <Typography variant='body2'>
-                      <strong>Modified By:</strong> {change.modifiedBy.username}
-                    </Typography>
-                    <Typography variant='body2'>
-                      <strong>Changes:</strong>
-                      <Box sx={{ marginLeft: 2 }}>
-                        {Object.entries(change.changes).map(([key, value]) => (
-                          <Typography key={key} variant='body2'>
-                            {key}: {value.toString()}
-                          </Typography>
-                        ))}
-                      </Box>
-                    </Typography>
-                  </Box>
-                ))
-              ) : (
-                <Typography variant='body2'>No historical changes</Typography>
-              )}
-            </Box>
+                  )}
+                </Grid>
+              </Grid>
+            </Paper>
           ))}
         </DialogContent>
         <DialogActions>

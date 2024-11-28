@@ -1,10 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import {
-  PublicClientApplication,
-  InteractionRequiredAuthError,
-} from '@azure/msal-browser';
-import { msalInstance } from './msalInstance'; // Assuming you have a separate file for msalInstance
-import { callMsGraph } from './graph'; // Assuming you have a separate file for graph API calls
+import React, { useState, useEffect, error } from 'react';
+import { InteractionRequiredAuthError } from '@azure/msal-browser';
+import { msalInstance } from '../components/msalInstance'; // Assuming you have a separate file for msalInstance
+import { callMsGraph } from '../components/graph'; // Assuming you have a separate file for graph API calls
+
 import {
   fetchAccessLogs,
   fetchDataGovernance,
@@ -21,7 +19,6 @@ import {
   Container,
   Paper,
   Divider,
-  Avatar,
   Tabs,
   Tab,
   Accordion,
@@ -29,10 +26,7 @@ import {
   AccordionDetails,
   Chip,
   Stack,
-  AppBar,
-  Toolbar,
   IconButton,
-  Badge,
   Tooltip,
   Switch,
   FormControlLabel,
@@ -51,14 +45,14 @@ import {
   Domain,
   Cloud,
   Router,
-  Language,
-  NotificationsActive,
-  Settings,
   Refresh,
   Dashboard,
 } from '@mui/icons-material';
-import DeviceList from './DeviceList.js';
-import DeviceStats from './DeviceStats.js';
+
+import DeviceList from '../components/DeviceList.js';
+import DeviceStats from '../components/DeviceStats';
+import { fetchNetworkScan, analyzePackets } from '../api/ipService'; // API for packet analysis
+
 const AzureLogin = () => {
   const [account, setAccount] = useState(null); // To store user account info
   const [isPopupOpen, setIsPopupOpen] = useState(false); // Handle UI popup state
@@ -75,15 +69,16 @@ const AzureLogin = () => {
   const [mainTab, setMainTab] = useState(0);
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [lastRefresh, setLastRefresh] = useState(null);
-  const [scannerStats, setScannerStats] = useState({
-    totalDevices: 0,
-    activeDevices: 0,
-    vulnerabilities: 0,
-    lastScan: null,
-  });
+
+  const [devices, setDevices] = useState([]); // State to hold the devices
+  const [loading, setLoading] = useState(false); // Loading state
+  const [error, setError] = useState(null); // Error state
+
+  const [isAzureLoggedIn, setIsAzureLoggedIn] = useState(false);
+  const [azureUserData, setAzureUserData] = useState(null);
 
   // Decode JWT to extract user details
-  const decodeJwt = (token) => {
+  function decodeJwt(token) {
     const base64Url = token.split('.')[1];
     const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
     const jsonPayload = decodeURIComponent(
@@ -93,7 +88,7 @@ const AzureLogin = () => {
         .join('')
     );
     return JSON.parse(jsonPayload);
-  };
+  }
 
   // Add new function to fetch all data
   const fetchAllData = async () => {
@@ -260,10 +255,6 @@ const AzureLogin = () => {
       setIsPopupOpen(false);
     }
   };
-
-  // Remove or update functions that use invalid scopes
-  // Remove: fetchDataLineage, fetchSensitiveData, fetchDataResidency
-  // Update remaining fetch functions to use valid Graph API endpoints
 
   // Logout function
   const logout = async () => {
@@ -534,72 +525,7 @@ const AzureLogin = () => {
     );
   };
 
-  // Add stats update handler
-  const handleStatsUpdate = (newStats) => {
-    try {
-      setScannerStats(newStats);
-    } catch (error) {
-      console.error('Error handling stats update:', error);
-    }
-  };
-
   // Add section components
-  const NetworkScanner = () => (
-    <Box>
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Stack
-          direction='row'
-          justifyContent='space-between'
-          alignItems='center'
-        >
-          <Typography variant='h6'>Network Scanner</Typography>
-          <Stack direction='row' spacing={2} alignItems='center'>
-            <DeviceStats stats={scannerStats} />
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={autoRefresh}
-                  onChange={(e) => setAutoRefresh(e.target.checked)}
-                />
-              }
-              label='Auto Refresh'
-            />
-            <Tooltip title={`Last refreshed: ${lastRefresh || 'Never'}`}>
-              <IconButton
-                onClick={() => setLastRefresh(new Date().toLocaleString())}
-              >
-                <Refresh />
-              </IconButton>
-            </Tooltip>
-          </Stack>
-        </Stack>
-      </Paper>
-
-      <Grid container spacing={3}>
-        <Grid item xs={12} lg={8}>
-          <DeviceList onStatsUpdate={handleStatsUpdate} />
-        </Grid>
-        <Grid item xs={12} lg={4}>
-          <Stack spacing={2}>
-            {dataInventory && (
-              <DataCard
-                title='Data Inventory'
-                icon={<Storage color='primary' />}
-                data={dataInventory}
-              />
-            )}
-            {accessLogs && (
-              <DataCard
-                title='Access Logs'
-                icon={<Security color='primary' />}
-                data={accessLogs}
-              />
-            )}
-          </Stack>
-        </Grid>
-      </Grid>
-    </Box>
-  );
 
   const CloudScanner = () => (
     <Box>
@@ -609,9 +535,24 @@ const AzureLogin = () => {
           justifyContent='space-between'
           alignItems='center'
         >
-          <Typography variant='h6'>Cloud Service Scanner</Typography>
+          <Typography variant='h6'>Cloud Provider</Typography>
           <Stack direction='row' spacing={2}>
-            <Tooltip title='Connected to Azure AD'>
+            <Tooltip
+              title={
+                <Box>
+                  <Typography>Connected to Azure AD</Typography>
+                  <Button
+                    variant='contained'
+                    color='secondary'
+                    size='small'
+                    onClick={logout}
+                    sx={{ mt: 1 }}
+                  >
+                    Logout
+                  </Button>
+                </Box>
+              }
+            >
               <Chip
                 icon={<Cloud />}
                 label='Azure AD'
@@ -661,53 +602,287 @@ const AzureLogin = () => {
     </Box>
   );
 
-  return (
+  const DBScanner = () => (
     <Box>
-      <Container maxWidth='lg' sx={{ py: 4 }}>
-        {!account ? (
-          <Paper sx={{ p: 4, textAlign: 'center' }}>
-            <Typography variant='h5' gutterBottom>
-              Welcome to DPDPA Scanner
-            </Typography>
-            <Typography color='textSecondary' paragraph>
-              Please login to access the scanner dashboard
-            </Typography>
-            <Button
-              variant='contained'
-              color='primary'
-              onClick={login}
-              startIcon={<AccountBox />}
-              sx={{ py: 1, px: 3 }}
-            >
-              Login with Azure AD
-            </Button>
-          </Paper>
-        ) : (
-          <Box>
-            <Tabs
-              value={mainTab}
-              onChange={(e, v) => setMainTab(v)}
-              sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}
-            >
-              <Tab
-                icon={<Router />}
-                label='Network Scanner'
-                iconPosition='start'
-              />
-              <Tab
-                icon={<Cloud />}
-                label='Cloud Service Scanner'
-                iconPosition='start'
-              />
-            </Tabs>
-
-            {mainTab === 0 && <NetworkScanner />}
-            {mainTab === 1 && <CloudScanner />}
-          </Box>
-        )}
-      </Container>
+      <Paper sx={{ p: 2, mb: 3 }}>
+        <Typography variant='h6'>DB Scanner</Typography>
+        {/* Add DB Scanner related components here */}
+      </Paper>
     </Box>
+  );
+
+  const SAASScanner = () => (
+    <Box>
+      <Paper sx={{ p: 2, mb: 3 }}>
+        <Typography variant='h6'>SAAS Scanner</Typography>
+        {/* Add SAAS Scanner related components here */}
+      </Paper>
+    </Box>
+  );
+
+  const LOBApplication = () => (
+    <Box>
+      <Paper sx={{ p: 2, mb: 3 }}>
+        <Typography variant='h6'>LOB Application</Typography>
+        {/* Add LOB Application related components here */}
+      </Paper>
+    </Box>
+  );
+
+  return (
+    <>
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+        <Typography variant='h4' gutterBottom>
+          Enterprise Scanner
+        </Typography>
+      </Box>
+      <Box sx={{ width: '100%' }}>
+        <Container maxWidth={false} sx={{ py: 4 }}>
+          {!account ? (
+            <Paper sx={{ p: 4, textAlign: 'center' }}>
+              {/* <Typography variant='h5' gutterBottom>
+                Welcome to Scanner
+              </Typography> */}
+              <Typography color='textSecondary' paragraph>
+                Please login to access the scanner dashboard
+              </Typography>
+              <Button
+                variant='contained'
+                color='primary'
+                onClick={login}
+                startIcon={<AccountBox />}
+                sx={{ py: 1, px: 3 }}
+              >
+                Login with Azure AD
+              </Button>
+            </Paper>
+          ) : (
+            <Box>
+              <Tabs
+                value={mainTab}
+                onChange={(e, v) => setMainTab(v)}
+                sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}
+              >
+                <Tab
+                  icon={<Router />}
+                  label='Network Scanner'
+                  iconPosition='start'
+                />
+                <Tab
+                  icon={<Cloud />}
+                  label='Cloud Provider'
+                  iconPosition='start'
+                />
+                <Tab
+                  icon={<Storage />}
+                  label='DB Scanner'
+                  iconPosition='start'
+                />
+                <Tab
+                  icon={<Business />}
+                  label='SAAS Scanner'
+                  iconPosition='start'
+                />
+                <Tab
+                  icon={<Dashboard />}
+                  label='LOB Application'
+                  iconPosition='start'
+                />
+              </Tabs>
+
+              {mainTab === 0 && <NetworkScanner />}
+              {mainTab === 1 && <CloudScanner />}
+              {mainTab === 2 && <DBScanner />}
+              {mainTab === 3 && <SAASScanner />}
+              {mainTab === 4 && <LOBApplication />}
+            </Box>
+          )}
+        </Container>
+      </Box>
+    </>
   );
 };
 
 export default AzureLogin;
+
+// import React, { useState } from 'react';
+// import { fetchNetworkScan, analyzePackets } from '../api/ipService'; // API for packet analysis
+// import DeviceList from '../components/DeviceList'; // Import the device list component
+// import DeviceStats from '../components/DeviceStats'; // Import the device stats component
+// import AzureLogin from '../components/AzureLogin'; // Import the device stats component
+// import AzureDetails from '../components/AzureDetails';
+// import './ScannerPage.css';
+
+// // Function to detect if the device is a TV
+// const isTV = (device) => {
+//   return device.Hostnames.some((hostname) =>
+//     hostname.toLowerCase().includes('tv')
+//   );
+// };
+
+// // Function to detect if the device is a Router
+// const isRouter = (device) => {
+//   return (
+//     device.OS.toLowerCase().includes('router') ||
+//     device.Hostnames.some((hostname) =>
+//       hostname.toLowerCase().includes('router')
+//     )
+//   );
+// };
+
+// // Function to detect if the device is a Mobile
+// const isMobile = (device) => {
+//   return (
+//     device.OS.toLowerCase().includes('android') ||
+//     device.OS.toLowerCase().includes('ios')
+//   );
+// };
+
+// // Function to detect if the device is a Laptop
+// const isLaptop = (device) => {
+//   return (
+//     device.OS.toLowerCase().includes('windows') ||
+//     device.OS.toLowerCase().includes('mac') ||
+//     device.OS.toLowerCase().includes('linux')
+//   );
+// };
+
+// const ScannerPage = () => {
+//   const [devices, setDevices] = useState([]); // State to hold the devices
+//   const [loading, setLoading] = useState(false); // Loading state
+//   const [error, setError] = useState(null); // Error state
+//   const [deviceStats, setDeviceStats] = useState({
+//     tv: 0,
+//     router: 0,
+//     mobile: 0,
+//     laptop: 0,
+//     other: 0,
+//   }); // State to hold the device statistics
+//   const [selectedDevices, setSelectedDevices] = useState([]); // State to track selected devices
+
+//   const [isAzureLoggedIn, setIsAzureLoggedIn] = useState(false);
+//   const [azureUserData, setAzureUserData] = useState(null);
+
+//   // Function to fetch devices
+//   const fetchDevices = async () => {
+//     setLoading(true);
+//     setError(null);
+//     try {
+//       const data = await fetchNetworkScan();
+//       setDevices(data.devices || []);
+//       updateDeviceStats(data.devices || []);
+//     } catch (err) {
+//       setError('Error fetching devices');
+//       console.error(err);
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   // Function to update device stats
+//   const updateDeviceStats = (devices) => {
+//     const stats = devices.reduce(
+//       (acc, device) => {
+//         if (isTV(device)) acc.tv++;
+//         else if (isRouter(device)) acc.router++;
+//         else if (isMobile(device)) acc.mobile++;
+//         else if (isLaptop(device)) acc.laptop++;
+//         else acc.other++;
+//         return acc;
+//       },
+//       { tv: 0, router: 0, mobile: 0, laptop: 0, other: 0 }
+//     );
+//     setDeviceStats(stats);
+//   };
+
+//   // Handle device selection
+//   const handleDeviceSelection = (deviceIP) => {
+//     setSelectedDevices((prev) =>
+//       prev.includes(deviceIP)
+//         ? prev.filter((ip) => ip !== deviceIP)
+//         : [...prev, deviceIP]
+//     );
+//   };
+
+//   // Analyze packets of selected devices
+//   const analyzeSelectedDevices = async () => {
+//     if (selectedDevices.length === 0) {
+//       alert('Please select at least one device for analysis.');
+//       return;
+//     }
+
+//     try {
+//       const analysisResults = await analyzePackets(selectedDevices);
+//       console.log('Packet Analysis Results:', analysisResults);
+//       // You can display these results in a new section or modal.
+//     } catch (err) {
+//       console.error('Error analyzing packets:', err);
+//       alert('Error analyzing packets');
+//     }
+//   };
+
+//   return (
+//     <div className='scanner-page'>
+//       <header className='scanner-header'>
+//         <h1>Network Scanner</h1>
+//         <AzureLogin
+//           setIsLoggedIn={setIsAzureLoggedIn}
+//           setUserData={setAzureUserData}
+//           setError={setError}
+//         />
+//         {isAzureLoggedIn && azureUserData && (
+//           <div className='user-info'>
+//             <p>Welcome, {azureUserData.username}</p>
+//           </div>
+//         )}
+//       </header>
+
+//       <main className='scanner-content'>
+//         {error && <p className='error-message'>{error}</p>}
+
+//         <div className='actions'>
+//           <button
+//             className='btn-primary'
+//             onClick={fetchDevices}
+//             disabled={loading}
+//           >
+//             {loading ? 'Fetching Devices...' : 'Get Devices List'}
+//           </button>
+
+//           {devices.length > 0 && (
+//             <button
+//               className='btn-secondary'
+//               onClick={analyzeSelectedDevices}
+//               disabled={selectedDevices.length === 0}
+//             >
+//               Analyze Selected Devices
+//             </button>
+//           )}
+//         </div>
+
+//         {loading && <p className='loading-message'>Loading devices...</p>}
+
+//         {!loading && devices.length === 0 && (
+//           <p className='no-devices-message'>
+//             No devices found. Please scan the network.
+//           </p>
+//         )}
+
+//         {devices.length > 0 && (
+//           <>
+//             <DeviceStats deviceStats={deviceStats} />
+//             <DeviceList
+//               devices={devices}
+//               selectedDevices={selectedDevices}
+//               handleDeviceSelection={handleDeviceSelection}
+//             />
+//           </>
+//         )}
+//       </main>
+
+//       {/* <AzureDetails /> */}
+//     </div>
+//   );
+// };
+
+// export default ScannerPage;

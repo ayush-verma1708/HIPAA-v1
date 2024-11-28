@@ -23,6 +23,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import { getUsers } from '../../api/userApi';
+import DiscoveredAssetsAndScopes from '../../components/discoveredAssetsAndScoppes';
 
 const AssetList = () => {
   const [assets, setAssets] = useState([]);
@@ -118,32 +119,6 @@ const AssetList = () => {
     }
   };
 
-  // const handleScopedChange = (event) => {
-  //   setSelectedScoped(event.target.value);
-  // };
-
-  // const handleAssetChange = async (event) => {
-  //   const assetId = event.target.value;
-  //   setSelectedAsset(assetId);
-  //   setSelectedScoped("");
-  //   setCoverageCount("");
-
-  //   try {
-  //     const assetobj = assets.find((a) => a._id === assetId);
-  //     if (assetobj && assetobj.isScoped) {
-  //       const { data } = await axios.get(
-  //         `http://localhost:8021/api/v1/assets/${assetId}/scoped`
-  //       );
-  //       setScoped(Array.isArray(data) ? data : []);
-  //     } else {
-  //       setScoped([]);
-  //     }
-  //   } catch (error) {
-  //     console.error("Error fetching scoped data:", error);
-  //     setScoped([]);
-  //   }
-  // };
-
   const handleScopedChange = (event) => {
     setSelectedScoped(event.target.value);
   };
@@ -206,28 +181,6 @@ const AssetList = () => {
     setBusinessOwnerEmail(assetDet.businessOwnerEmail || '');
     setItOwnerName(assetDet.itOwnerName || ''); // Ensure this is an ID
     setItOwnerEmail(assetDet.itOwnerEmail || '');
-  };
-  // const handleEdit = (assetDet) => {
-  //   setEditCoverageId(assetDet._id);
-  //   setSelectedAsset(assetDet.asset?._id || "");
-  //   setSelectedScoped(assetDet.scoped?._id || "");
-  //   setCoverageCount(assetDet.coverages);
-  //   setCriticality(assetDet.criticality || "");
-  //   setBusinessOwnerName(assetDet.businessOwnerName || "");
-  //   setBusinessOwnerEmail(assetDet.businessOwnerEmail || "");
-  //   setItOwnerName(assetDet.itOwnerName || "");
-  //   setItOwnerEmail(assetDet.itOwnerEmail || "");
-  // };
-
-  const handleDelete = async (assetDetId) => {
-    try {
-      await axios.delete(
-        `http://localhost:8021/api/v1/assetDetails/${assetDetId}`
-      );
-      setAssetDetails(assetDetails.filter((ad) => ad._id !== assetDetId));
-    } catch (error) {
-      console.error('Error deleting coverage:', error);
-    }
   };
 
   const handleOpenNewAssetDialog = () => {

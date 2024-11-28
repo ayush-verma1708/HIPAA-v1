@@ -4,7 +4,7 @@ import Control from './control.js';
 const controlFamilySchema = new mongoose.Schema({
   fixed_id: { type: String, unique: true },
   variable_id: { type: String, required: true },
-  isControlFamily: { type: String,default: true },
+  isControlFamily: { type: String, default: true },
   isDPDPA: { type: Boolean, default: false },
 });
 

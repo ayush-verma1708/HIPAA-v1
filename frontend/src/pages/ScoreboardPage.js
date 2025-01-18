@@ -14,7 +14,8 @@ const ScoreboardPage = () => {
       </Typography> */}
       <Paper sx={{ padding: 2, marginBottom: 2 }}>
         <Box>
-          <LineageDiagram />
+          {/* <LineageDiagram /> */}
+          <ScoreboardLineage />
         </Box>
         {/* <Box>
           <ScoreboardLineage />

@@ -6,7 +6,8 @@ from subprocess import Popen, PIPE
 import ipaddress
 
 # Hardcoded input for testing
-input_data = '{"devices": ["192.168.1.4"]}'
+input_data = '{"devices": ["172.20.10.1"]}'
+# input_data = '{"devices": ["192.168.1.4"]}'
 
 # AWS IP Range Check
 def get_aws_ip_ranges():

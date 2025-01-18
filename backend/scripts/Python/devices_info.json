@@ -1,0 +1,48 @@
+{
+    "scan_id": "c0c4fba1-1e2b-4f01-9856-f195810ab214",
+    "timestamp": "2024-11-29 10:34:02",
+    "devices": [
+        {
+            "IP": "192.168.1.3",
+            "Hostnames": [
+                ""
+            ],
+            "OS": "Unknown",
+            "Open Ports": [],
+            "MAC": "BE:EB:80:1C:D7:59",
+            "Vendor": "Unknown"
+        },
+        {
+            "IP": "192.168.1.10",
+            "Hostnames": [
+                ""
+            ],
+            "OS": "Unknown",
+            "Open Ports": [],
+            "MAC": "DC:72:23:E2:48:80",
+            "Vendor": "Hui Zhou Gaoshengda Technology"
+        },
+        {
+            "IP": "192.168.1.13",
+            "Hostnames": [
+                ""
+            ],
+            "OS": "Unknown",
+            "Open Ports": [],
+            "MAC": "3C:7A:AA:43:42:09",
+            "Vendor": "China Dragon Technology Limited"
+        },
+        {
+            "IP": "192.168.1.1",
+            "Hostnames": [
+                ""
+            ],
+            "OS": "Linux 3.10 - 4.11",
+            "Open Ports": [
+                53
+            ],
+            "MAC": "BC:62:D2:C3:90:A9",
+            "Vendor": "Genexis International"
+        }
+    ]
+}

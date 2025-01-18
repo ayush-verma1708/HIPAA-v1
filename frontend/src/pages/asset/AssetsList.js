@@ -351,6 +351,7 @@ const AssetList = () => {
 
   return (
     <Container>
+      <DiscoveredAssetsAndScopes />
       <Button
         variant='contained'
         onClick={() => {
